@@ -44,8 +44,8 @@ jobs:
           REVISION=${{ steps.version.outputs.revision }}
           BUILD=${{ steps.version.outputs.build }}
 
-          # Find all component directories containing both component.yaml and package.json
-          for component_dir in $(find . -name "component.yaml" -exec dirname {} \;); do
+          # Find all component directories containing both sourcepack.json and package.json
+          for component_dir in $(find . -name "sourcepack.json" -exec dirname {} \;); do
             if [ -f "${component_dir}/package.json" ]; then
               echo "=========================================="
               echo "Publishing component: ${component_dir}"
