@@ -1,0 +1,20 @@
+{
+  "name": "@microsoft/sourcepack-cli",
+  "version": "0.0.0",
+  "description": "CLI tool to scaffold template files from sourcepack packages",
+  "bin": {
+    "sourcepack": "./bin/cli.js"
+  },
+  "files": [
+    "bin/"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/microsoft/sourcepack.git",
+    "directory": "msft-sourcepack-cli"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "license": "MIT"
+}

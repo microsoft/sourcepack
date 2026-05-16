@@ -1,0 +1,5 @@
+{
+  "files": [
+    { "src": "README.md", "dest": ".", "ifExists": "skip" }
+  ]
+}

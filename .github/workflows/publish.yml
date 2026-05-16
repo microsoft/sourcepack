@@ -1,0 +1,91 @@
+name: Publish Packages
+
+on:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://npm.pkg.github.com'
+
+      - name: Derive modver version
+        id: version
+        run: |
+          REVISION=$(git rev-list HEAD --count)
+          BUILD=${{ github.run_number }}
+          echo "revision=${REVISION}" >> "$GITHUB_OUTPUT"
+          echo "build=${BUILD}" >> "$GITHUB_OUTPUT"
+          echo "Revision: ${REVISION}, Build: ${BUILD}"
+
+      - name: Discover and publish components
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          REVISION=${{ steps.version.outputs.revision }}
+          BUILD=${{ steps.version.outputs.build }}
+
+          # Find all component directories containing both component.yaml and package.json
+          for component_dir in $(find . -name "component.yaml" -exec dirname {} \;); do
+            if [ -f "${component_dir}/package.json" ]; then
+              echo "=========================================="
+              echo "Publishing component: ${component_dir}"
+              echo "=========================================="
+
+              cd "${component_dir}"
+
+              # Read major.minor from the existing package.json version
+              CURRENT_VERSION=$(node -p "require('./package.json').version")
+              MAJOR=$(echo "${CURRENT_VERSION}" | cut -d. -f1)
+              MINOR=$(echo "${CURRENT_VERSION}" | cut -d. -f2)
+
+              VERSION="${MAJOR}.${MINOR}.${REVISION}"
+              echo "Version: ${VERSION} (build: ${BUILD})"
+
+              # Set the version without creating a git tag
+              npm version "${VERSION}" --no-git-tag-version
+
+              # Publish the package
+              npm publish
+
+              cd "${GITHUB_WORKSPACE}"
+            fi
+          done
+
+      - name: Publish CLI package
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          REVISION=${{ steps.version.outputs.revision }}
+          BUILD=${{ steps.version.outputs.build }}
+
+          cd msft-sourcepack-cli
+
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          MAJOR=$(echo "${CURRENT_VERSION}" | cut -d. -f1)
+          MINOR=$(echo "${CURRENT_VERSION}" | cut -d. -f2)
+
+          VERSION="${MAJOR}.${MINOR}.${REVISION}"
+          echo "Publishing CLI version: ${VERSION} (build: ${BUILD})"
+
+          npm version "${VERSION}" --no-git-tag-version
+          npm publish
